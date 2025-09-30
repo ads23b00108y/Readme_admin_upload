@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import firebaseApp from './firebase'; // Adjust import if needed
+import { auth } from './firebase';
 
 const PurplePaper = styled(Paper)(({ theme }) => ({
   background: '#f8f6fc',
@@ -35,7 +35,6 @@ function AdminAuth({ children }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const auth = getAuth(firebaseApp);
   const user = auth.currentUser;
 
   const handleSignIn = async (e) => {

@@ -12,7 +12,7 @@ import { styled } from '@mui/material/styles';
 import { getAuth } from 'firebase/auth';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import firebaseApp from './firebase'; // Adjust import if needed
+import { auth, storage, db } from './firebase';
 
 const PurplePaper = styled(Paper)(({ theme }) => ({
   background: '#f8f6fc',
@@ -71,16 +71,13 @@ function BookUploadForm() {
     }
 
     try {
-      const auth = getAuth(firebaseApp);
       const user = auth.currentUser;
       if (!user) {
         setError('You must be signed in as an admin.');
         setUploading(false);
         return;
       }
-
-      const storage = getStorage(firebaseApp);
-      const firestore = getFirestore(firebaseApp);
+      const firestore = db;
 
       // Upload PDF
       const pdfRef = ref(storage, `books/pdfs/${Date.now()}_${form.pdfFile.name}`);
