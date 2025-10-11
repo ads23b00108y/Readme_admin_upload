@@ -78,8 +78,8 @@ function BooksTable() {
     { field: 'title', headerName: 'Title', flex: 1, minWidth: 150 },
     { field: 'author', headerName: 'Author', flex: 1, minWidth: 120 },
     { field: 'ageRating', headerName: 'Age', width: 80 },
-    { field: 'tags', headerName: 'Tags', flex: 1, minWidth: 120, valueGetter: (params) => params.row.tags?.join(', ') },
-    { field: 'traits', headerName: 'Traits', flex: 1, minWidth: 120, valueGetter: (params) => params.row.traits?.join(', ') },
+  { field: 'tags', headerName: 'Tags', flex: 1, minWidth: 120, valueGetter: (params) => Array.isArray(params.row.tags) ? params.row.tags.join(', ') : '' },
+  { field: 'traits', headerName: 'Traits', flex: 1, minWidth: 120, valueGetter: (params) => Array.isArray(params.row.traits) ? params.row.traits.join(', ') : '' },
     {
       field: 'coverImageUrl',
       headerName: 'Cover',
