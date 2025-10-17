@@ -1,25 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
   TextField,
   Box,
   Typography,
   CircularProgress,
 } from '@mui/material';
+import PurpleButton from './PurpleButton';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db, storage } from './firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 function EditBookDialog({ open, onClose, book, onBookUpdated }) {
-  const [form, setForm] = useState({ ...book });
+  const [form, setForm] = useState({
+    title: '',
+    author: '',
+    description: '',
+    ageRating: '',
+    pdfUrl: '',
+    displayCover: '',
+  });
   const [coverImage, setCoverImage] = useState(null);
   const [pdfFile, setPdfFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (book) {
+      setForm({
+        title: book.title || '',
+        author: book.author || '',
+        description: book.description || '',
+        ageRating: book.ageRating || '',
+        pdfUrl: book.pdfUrl || '',
+        displayCover: book.displayCover || '',
+      });
+      setCoverImage(null);
+      setPdfFile(null);
+      setError('');
+    }
+  }, [book, open]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -36,30 +59,31 @@ function EditBookDialog({ open, onClose, book, onBookUpdated }) {
     setLoading(true);
     setError('');
     try {
-      let coverImageUrl = form.coverImageUrl;
       let pdfUrl = form.pdfUrl;
+  let displayCover = form.displayCover || '📚';
       // Upload new cover image if provided
       if (coverImage) {
-        const imgRef = ref(storage, `books/covers/${Date.now()}_${coverImage.name}`);
-        await uploadBytesResumable(imgRef, coverImage);
-        coverImageUrl = await getDownloadURL(imgRef);
+        const ext = coverImage.name.split('.').pop();
+        const coverFileName = `${Date.now()}_${form.title.replace(/[^a-zA-Z0-9]/g, '_')}_cover.${ext}`;
+        const coverRef = ref(storage, `books/covers/${coverFileName}`);
+        await uploadBytesResumable(coverRef, coverImage);
+        displayCover = await getDownloadURL(coverRef);
       }
       // Upload new PDF if provided
       if (pdfFile) {
-        const pdfRef = ref(storage, `books/pdfs/${Date.now()}_${pdfFile.name}`);
+        const pdfFileName = `${Date.now()}_${form.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        const pdfRef = ref(storage, `books/pdfs/${pdfFileName}`);
         await uploadBytesResumable(pdfRef, pdfFile);
         pdfUrl = await getDownloadURL(pdfRef);
       }
       // Prepare updated data
       const updatedData = {
-        title: form.title,
-        author: form.author,
-        description: form.description,
-        tags: form.tags.split(',').map((t) => t.trim()),
-        traits: form.traits.split(',').map((t) => t.trim()),
+        title: form.title.trim(),
+        author: form.author.trim(),
+        description: form.description.trim(),
         ageRating: form.ageRating,
-        coverImageUrl,
         pdfUrl,
+        displayCover,
       };
       await updateDoc(doc(db, 'books', book.id), updatedData);
       onBookUpdated({ ...book, ...updatedData });
@@ -78,7 +102,7 @@ function EditBookDialog({ open, onClose, book, onBookUpdated }) {
           <TextField
             label="Title"
             name="title"
-            value={form.title || ''}
+            value={form.title}
             onChange={handleChange}
             fullWidth
             required
@@ -87,7 +111,7 @@ function EditBookDialog({ open, onClose, book, onBookUpdated }) {
           <TextField
             label="Author"
             name="author"
-            value={form.author || ''}
+            value={form.author}
             onChange={handleChange}
             fullWidth
             required
@@ -96,7 +120,7 @@ function EditBookDialog({ open, onClose, book, onBookUpdated }) {
           <TextField
             label="Description"
             name="description"
-            value={form.description || ''}
+            value={form.description}
             onChange={handleChange}
             fullWidth
             multiline
@@ -105,44 +129,29 @@ function EditBookDialog({ open, onClose, book, onBookUpdated }) {
             sx={{ mb: 2 }}
           />
           <TextField
-            label="Tags (comma separated)"
-            name="tags"
-            value={form.tags || ''}
-            onChange={handleChange}
-            fullWidth
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            label="Traits (comma separated)"
-            name="traits"
-            value={form.traits || ''}
-            onChange={handleChange}
-            fullWidth
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            label="Age Rating"
+            label="Age Rating (e.g. 6+)"
             name="ageRating"
-            value={form.ageRating || ''}
+            value={form.ageRating}
             onChange={handleChange}
             fullWidth
             required
             sx={{ mb: 2 }}
           />
+          {/* Cover Emoji field removed */}
           <Box sx={{ mb: 2 }}>
             <Typography variant="body2" sx={{ mb: 1 }}>
-              Cover Image (optional)
+              Replace Cover Image (optional)
             </Typography>
             <input
               type="file"
               name="coverImage"
-              accept="image/*"
+              accept="image/jpeg,image/png"
               onChange={handleChange}
             />
           </Box>
           <Box sx={{ mb: 2 }}>
             <Typography variant="body2" sx={{ mb: 1 }}>
-              PDF File (optional)
+              Replace PDF File (optional)
             </Typography>
             <input
               type="file"
@@ -161,10 +170,10 @@ function EditBookDialog({ open, onClose, book, onBookUpdated }) {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={loading}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained" sx={{ fontWeight: 600 }} disabled={loading}>
+        <PurpleButton onClick={onClose} disabled={loading} sx={{ minWidth: 90 }}>Cancel</PurpleButton>
+        <PurpleButton onClick={handleSubmit} variant="contained" sx={{ fontWeight: 600, minWidth: 90 }} disabled={loading}>
           Save
-        </Button>
+        </PurpleButton>
       </DialogActions>
     </Dialog>
   );

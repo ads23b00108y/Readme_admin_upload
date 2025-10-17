@@ -9,7 +9,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyC8krppXLuTXliGvhYMrdnxym9y7Ga-YcA",
   authDomain: "readme-40267.firebaseapp.com",
   projectId: "readme-40267",
-  storageBucket: "readme-40267.firebasestorage.app", // <-- fix: should be .appspot.com
+  storageBucket: "readme-40267.firebasestorage.app",
   messagingSenderId: "137949170130",
   appId: "1:137949170130:web:d9e08d9e802b59185e200b",
   measurementId: "G-Y27611WDKT"

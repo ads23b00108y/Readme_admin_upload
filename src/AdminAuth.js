@@ -8,7 +8,7 @@ import {
   Paper,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './firebase';
 
 const PurplePaper = styled(Paper)(({ theme }) => ({
@@ -49,13 +49,11 @@ function AdminAuth({ children }) {
     setLoading(false);
   };
 
-  const handleSignOut = async () => {
-    await signOut(auth);
-  };
+  // Removed unused handleSignOut
 
   if (!user) {
     return (
-      <Box sx={{ mt: 8 }}>
+      <Box sx={{ mt: 0 }}>
         <PurplePaper elevation={3}>
           <Typography variant="h6" sx={{ color: '#8E44AD', mb: 2, fontWeight: 700 }}>
             Admin Sign In
@@ -97,11 +95,6 @@ function AdminAuth({ children }) {
 
   return (
     <Box sx={{ mt: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <PurpleButton variant="contained" onClick={handleSignOut}>
-          Sign Out
-        </PurpleButton>
-      </Box>
       {children}
     </Box>
   );
