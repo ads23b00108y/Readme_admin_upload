@@ -54,72 +54,88 @@ function BookUploadForm() {
       setUploading(false);
       return;
     }
-  let displayCoverUrl = '📚';
+    if (!auth.currentUser) {
+      setError('You must be signed in as an admin.');
+      setUploading(false);
+      return;
+    }
+    const firestore = db;
+    // Validate before uploading anything
+    const bookDocument = {
+      title: form.title.trim(),
+      author: form.author.trim(),
+      description: form.description.trim(),
+      ageRating: form.ageRating,
+      pdfUrl: 'dummy', // placeholder, will be replaced after upload
+      coverImageUrl: '',
+      createdAt: serverTimestamp(),
+      needsTagging: true,
+      isVisible: true,
+    };
     try {
-      const user = auth.currentUser;
-      if (!user) {
-        setError('You must be signed in as an admin.');
-        setUploading(false);
-        return;
-      }
-      const firestore = db;
+      validateBookDocument({ ...bookDocument, pdfUrl: 'dummy' }); // pdfUrl required by validation, but not yet uploaded
+    } catch (err) {
+      setError(err.message);
+      setUploading(false);
+      return;
+    }
+    try {
       // Upload PDF
       const fileName = `${Date.now()}_${form.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
       const pdfRef = ref(storage, `books/pdfs/${fileName}`);
       const pdfTask = uploadBytesResumable(pdfRef, form.pdfFile);
-      pdfTask.on('state_changed',
-        (snapshot) => {
-          setProgress(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100));
-        },
-        (err) => {
-          setError('PDF upload failed: ' + err.message);
-          setUploading(false);
-        },
-        async () => {
-          try {
-            const pdfUrl = await getDownloadURL(pdfRef);
-            const response = await fetch(pdfUrl, { method: 'HEAD' });
-            if (!response.ok) {
-              throw new Error('PDF upload failed - URL not accessible');
-            }
-            // Upload cover image if provided
-            if (form.coverImage) {
-              const ext = form.coverImage.name.split('.').pop();
-              const coverFileName = `${Date.now()}_${form.title.replace(/[^a-zA-Z0-9]/g, '_')}_cover.${ext}`;
-              const coverRef = ref(storage, `books/covers/${coverFileName}`);
-              await uploadBytesResumable(coverRef, form.coverImage);
-              displayCoverUrl = await getDownloadURL(coverRef);
-            }
-            const bookDocument = {
-              title: form.title.trim(),
-              author: form.author.trim(),
-              description: form.description.trim(),
-              ageRating: form.ageRating,
-              pdfUrl: pdfUrl,
-              displayCover: displayCoverUrl,
-              createdAt: serverTimestamp(),
-              needsTagging: true,
-              isVisible: true,
-            };
-            validateBookDocument(bookDocument);
-            await addDoc(collection(firestore, 'books'), bookDocument);
-            setSuccess(true);
-            setForm({
-              title: '',
-              author: '',
-              description: '',
-              ageRating: '',
-              pdfFile: null,
-              coverImage: null,
-            });
-            setProgress(0);
+      await new Promise((resolve, reject) => {
+        pdfTask.on('state_changed',
+          (snapshot) => {
+            setProgress(Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100));
+          },
+          (err) => {
+            setError('PDF upload failed: ' + err.message);
             setUploading(false);
-          } catch (err) {
-            setError('Upload failed: ' + err.message);
-            setUploading(false);
+            reject(err);
+          },
+          async () => {
+            try {
+              const pdfUrl = await getDownloadURL(pdfRef);
+              const response = await fetch(pdfUrl, { method: 'HEAD' });
+              if (!response.ok) {
+                throw new Error('PDF upload failed - URL not accessible');
+              }
+              // Upload cover image if provided
+              let coverImageUrl = '';
+              if (form.coverImage) {
+                const ext = form.coverImage.name.split('.').pop();
+                const coverFileName = `${Date.now()}_${form.title.replace(/[^a-zA-Z0-9]/g, '_')}_cover.${ext}`;
+                const coverRef = ref(storage, `books/covers/${coverFileName}`);
+                await uploadBytesResumable(coverRef, form.coverImage);
+                coverImageUrl = await getDownloadURL(coverRef);
+              }
+              const finalBookDocument = {
+                ...bookDocument,
+                pdfUrl,
+                coverImageUrl,
+              };
+              await addDoc(collection(firestore, 'books'), finalBookDocument);
+              setSuccess(true);
+              setForm({
+                title: '',
+                author: '',
+                description: '',
+                ageRating: '',
+                pdfFile: null,
+                coverImage: null,
+              });
+              setProgress(0);
+              setUploading(false);
+              resolve();
+            } catch (err) {
+              setError('Upload failed: ' + err.message);
+              setUploading(false);
+              reject(err);
+            }
           }
-        }
-      );
+        );
+      });
     } catch (err) {
       setError('Upload failed: ' + err.message);
       setUploading(false);
@@ -127,9 +143,12 @@ function BookUploadForm() {
   };
 
   return (
-  <Box sx={{ mt: 6, mb: 6, px: 2, maxWidth: 500, mx: 'auto', boxSizing: 'border-box', pt: 10 }}>
-      <form onSubmit={handleSubmit}>
-        <TextField
+    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 0, pt: 0 }}>
+      <Typography variant="h4" sx={{ mt: 0, mb: 3, fontWeight: 700, color: '#7c3aed' }}>Upload Book</Typography>
+      <Box sx={{ p: 3, bgcolor: '#fff', borderRadius: 3, boxShadow: 2 }}>
+        <form onSubmit={handleSubmit}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Book Details</Typography>
+          <TextField
           label="Book Title"
           name="title"
           value={form.title}
@@ -171,97 +190,31 @@ function BookUploadForm() {
           placeholder="Recommended age, e.g. 6+"
           sx={{ mb: 2 }}
         />
-        {/* Modern PDF Upload */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            Upload PDF file (required)
-          </Typography>
-          <label htmlFor="pdf-upload">
-            <input
-              id="pdf-upload"
-              type="file"
-              name="pdfFile"
-              accept="application/pdf"
-              required
-              onChange={handleChange}
-              style={{ display: 'none' }}
-            />
-            <Box
-              component="span"
-              sx={{
-                display: 'inline-block',
-                width: '100%',
-                mb: 1,
-              }}
-            >
-              <Box
-                sx={{
-                  border: '1px solid #bbb',
-                  borderRadius: 2,
-                  background: '#fafbfc',
-                  color: '#444',
-                  px: 2,
-                  py: 1.2,
-                  width: '100%',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  fontWeight: 500,
-                  fontSize: 15,
-                  transition: 'background 0.2s',
-                  '&:hover': { background: '#f0f0f0' },
-                  userSelect: 'none',
-                }}
-              >
-                {form.pdfFile ? `PDF Selected: ${form.pdfFile.name}` : 'Choose PDF File'}
-              </Box>
-            </Box>
-          </label>
-        </Box>
-        {/* Modern Cover Image Upload */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            Upload Cover Image (optional, jpg/png)
-          </Typography>
-          <label htmlFor="cover-upload">
-            <input
-              id="cover-upload"
-              type="file"
-              name="coverImage"
-              accept="image/jpeg,image/png"
-              onChange={handleChange}
-              style={{ display: 'none' }}
-            />
-            <Box
-              component="span"
-              sx={{
-                display: 'inline-block',
-                width: '100%',
-                mb: 1,
-              }}
-            >
-              <Box
-                sx={{
-                  border: '1px solid #bbb',
-                  borderRadius: 2,
-                  background: '#fafbfc',
-                  color: '#444',
-                  px: 2,
-                  py: 1.2,
-                  width: '100%',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  fontWeight: 500,
-                  fontSize: 15,
-                  transition: 'background 0.2s',
-                  '&:hover': { background: '#f0f0f0' },
-                  userSelect: 'none',
-                }}
-              >
-                {form.coverImage ? `Image Selected: ${form.coverImage.name}` : 'Choose Cover Image'}
-              </Box>
-            </Box>
-          </label>
-        </Box>
+        {/* Modern Cover Image Upload - styled like other fields */}
+        <TextField
+          label="Cover Image (optional, jpg/png)"
+          name="coverImage"
+          type="file"
+          fullWidth
+          InputLabelProps={{ shrink: true }}
+          inputProps={{ accept: 'image/jpeg,image/png' }}
+          onChange={handleChange}
+          sx={{ mb: 2 }}
+          helperText={form.coverImage ? `Selected: ${form.coverImage.name}` : ''}
+        />
+        {/* Modern PDF Upload - styled like other fields */}
+        <TextField
+          label="PDF File (required)"
+          name="pdfFile"
+          type="file"
+          fullWidth
+          required
+          InputLabelProps={{ shrink: true }}
+          inputProps={{ accept: 'application/pdf' }}
+          onChange={handleChange}
+          sx={{ mb: 2 }}
+          helperText={form.pdfFile ? `Selected: ${form.pdfFile.name}` : ''}
+        />
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         {success && (
           <Alert severity="success" sx={{ mb: 2 }}>
@@ -274,16 +227,17 @@ function BookUploadForm() {
             <Typography>Uploading... {progress}%</Typography>
           </Box>
         )}
-        <PurpleButton
-          type="submit"
-          variant="contained"
-          disabled={uploading}
-          fullWidth
-          sx={{ mt: 2, fontWeight: 600 }}
-        >
-          Submit Book
-        </PurpleButton>
-      </form>
+          <PurpleButton
+            type="submit"
+            variant="contained"
+            disabled={uploading}
+            fullWidth
+            sx={{ mt: 2, fontWeight: 600, height: 48, fontSize: 17, textTransform: 'none' }}
+          >
+            Submit book
+          </PurpleButton>
+        </form>
+      </Box>
     </Box>
   );
 }

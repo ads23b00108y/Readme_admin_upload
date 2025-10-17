@@ -21,7 +21,7 @@ function EditBookDialog({ open, onClose, book, onBookUpdated }) {
     description: '',
     ageRating: '',
     pdfUrl: '',
-    displayCover: '',
+    coverImageUrl: '',
   });
   const [coverImage, setCoverImage] = useState(null);
   const [pdfFile, setPdfFile] = useState(null);
@@ -36,7 +36,7 @@ function EditBookDialog({ open, onClose, book, onBookUpdated }) {
         description: book.description || '',
         ageRating: book.ageRating || '',
         pdfUrl: book.pdfUrl || '',
-        displayCover: book.displayCover || '',
+        coverImageUrl: book.coverImageUrl || book.displayCover || book.coverUrl || '',
       });
       setCoverImage(null);
       setPdfFile(null);
@@ -60,14 +60,25 @@ function EditBookDialog({ open, onClose, book, onBookUpdated }) {
     setError('');
     try {
       let pdfUrl = form.pdfUrl;
-  let displayCover = form.displayCover || '📚';
+      let coverImageUrl = form.coverImageUrl;
       // Upload new cover image if provided
       if (coverImage) {
+        // Delete old cover image from storage if it exists and is a URL
+        if (coverImageUrl && typeof coverImageUrl === 'string' && coverImageUrl.startsWith('http')) {
+          try {
+            const oldCoverPath = coverImageUrl.split('/o/')[1].split('?')[0].replace(/%2F/g, '/');
+            const oldCoverRef = ref(storage, oldCoverPath);
+            await oldCoverRef.delete?.() || await import('firebase/storage').then(({ deleteObject }) => deleteObject(oldCoverRef)).catch(() => {});
+          } catch (deleteErr) {
+            // Ignore delete errors, just log
+            console.warn('Failed to delete old cover image:', deleteErr);
+          }
+        }
         const ext = coverImage.name.split('.').pop();
         const coverFileName = `${Date.now()}_${form.title.replace(/[^a-zA-Z0-9]/g, '_')}_cover.${ext}`;
         const coverRef = ref(storage, `books/covers/${coverFileName}`);
         await uploadBytesResumable(coverRef, coverImage);
-        displayCover = await getDownloadURL(coverRef);
+        coverImageUrl = await getDownloadURL(coverRef);
       }
       // Upload new PDF if provided
       if (pdfFile) {
@@ -83,10 +94,12 @@ function EditBookDialog({ open, onClose, book, onBookUpdated }) {
         description: form.description.trim(),
         ageRating: form.ageRating,
         pdfUrl,
-        displayCover,
+        coverImageUrl,
       };
       await updateDoc(doc(db, 'books', book.id), updatedData);
-      onBookUpdated({ ...book, ...updatedData });
+      if (typeof onBookUpdated === 'function') {
+        onBookUpdated({ ...book, ...updatedData });
+      }
       onClose();
     } catch (err) {
       setError('Failed to update book: ' + err.message);
@@ -171,7 +184,7 @@ function EditBookDialog({ open, onClose, book, onBookUpdated }) {
       </DialogContent>
       <DialogActions>
         <PurpleButton onClick={onClose} disabled={loading} sx={{ minWidth: 90 }}>Cancel</PurpleButton>
-        <PurpleButton onClick={handleSubmit} variant="contained" sx={{ fontWeight: 600, minWidth: 90 }} disabled={loading}>
+        <PurpleButton type="submit" form="edit-book-form" variant="contained" sx={{ fontWeight: 600, minWidth: 90 }} disabled={loading}>
           Save
         </PurpleButton>
       </DialogActions>

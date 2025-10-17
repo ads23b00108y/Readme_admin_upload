@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Paper, Typography, CircularProgress, IconButton, Tooltip, TextField, MenuItem, Snackbar, Alert } from '@mui/material';
+import { Box, Paper, Typography, CircularProgress, IconButton, Tooltip, TextField, MenuItem, Snackbar, Alert, FormControl, InputLabel, Select } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -54,7 +54,6 @@ function BookDetailDialog({ open, onClose, book }) {
   );
 }
 
-
 function BooksTable() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +64,7 @@ function BooksTable() {
   const [detailBook, setDetailBook] = useState(null);
   const [search, setSearch] = useState('');
   const [ageFilter, setAgeFilter] = useState('');
+  const [sortBy, setSortBy] = useState('date');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
@@ -158,24 +158,43 @@ function BooksTable() {
   ];
 
   // Filter books by search and age group
-  const filteredBooks = books.filter((book) => {
+  let filteredBooks = books.filter((book) => {
     const matchesSearch =
       book.title?.toLowerCase().includes(search.toLowerCase()) ||
       book.author?.toLowerCase().includes(search.toLowerCase());
     const matchesAge = ageFilter ? book.ageRating === ageFilter : true;
     return matchesSearch && matchesAge;
   });
+  // Sort books
+  if (sortBy === 'missingCover') {
+    filteredBooks = filteredBooks.filter(b => !(b.coverUrl || b.coverImageUrl || b.displayCover));
+  } else if (sortBy === 'missingPdf') {
+    filteredBooks = filteredBooks.filter(b => !b.pdfUrl);
+  } else {
+    filteredBooks = [...filteredBooks].sort((a, b) => {
+      if (sortBy === 'title') {
+        return (a.title || '').localeCompare(b.title || '');
+      } else if (sortBy === 'author') {
+        return (a.author || '').localeCompare(b.author || '');
+      } else if (sortBy === 'date') {
+        // Newest first
+        const da = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+        const db = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+        return db - da;
+      }
+      return 0;
+    });
+  }
 
   // Collect unique age ratings for filter dropdown
   const ageOptions = Array.from(new Set(books.map((b) => b.ageRating).filter(Boolean)));
 
   return (
-    <Box sx={{ mt: 6, mb: 6 }}>
-      <Paper sx={{ p: 3, borderRadius: 3, maxWidth: 1200, margin: 'auto' }}>
-        <Typography variant="h5" sx={{ color: '#8E44AD', mb: 2, fontWeight: 700 }}>
-          Books Management
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+    <Box sx={{ maxWidth: 1300, mx: 'auto', mt: 0.5 }}>
+      <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: '#7c3aed' }}>Manage Books</Typography>
+      <Paper sx={{ p: 3, borderRadius: 3, mb: 2 }}>
+        <Typography variant="h6" sx={{ color: '#8E44AD', mb: 2, fontWeight: 700 }}>Books</Typography>
+        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <TextField
             label="Search"
             value={search}
@@ -191,7 +210,7 @@ function BooksTable() {
             InputProps={{}}
           />
           <TextField
-            label="Age Group"
+            label="Age group"
             value={ageFilter}
             onChange={(e) => setAgeFilter(e.target.value)}
             select
@@ -203,6 +222,21 @@ function BooksTable() {
               <MenuItem key={age} value={age}>{age}</MenuItem>
             ))}
           </TextField>
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <InputLabel id="sort-by-label">Sort by</InputLabel>
+            <Select
+              labelId="sort-by-label"
+              value={sortBy}
+              label="Sort by"
+              onChange={e => setSortBy(e.target.value)}
+            >
+              <MenuItem value="date">Date added (newest)</MenuItem>
+              <MenuItem value="title">Title (A-Z)</MenuItem>
+              <MenuItem value="author">Author (A-Z)</MenuItem>
+              <MenuItem value="missingCover">Missing cover</MenuItem>
+              <MenuItem value="missingPdf">Missing PDF</MenuItem>
+            </Select>
+          </FormControl>
         </Box>
         {error && <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>}
         <Snackbar
@@ -221,14 +255,22 @@ function BooksTable() {
           </Box>
         ) : (
           <div style={{ width: '100%' }}>
-            <DataGrid
-              rows={filteredBooks}
-              columns={columns}
-              autoHeight
-              pageSize={10}
-              rowsPerPageOptions={[10, 20, 50]}
-              disableSelectionOnClick
-            />
+            {(sortBy === 'missingCover' && filteredBooks.length === 0) && (
+              <Typography color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>No books missing covers.</Typography>
+            )}
+            {(sortBy === 'missingPdf' && filteredBooks.length === 0) && (
+              <Typography color="text.secondary" sx={{ mb: 2, textAlign: 'center' }}>No books missing PDFs.</Typography>
+            )}
+            {((sortBy !== 'missingCover' && sortBy !== 'missingPdf') || filteredBooks.length > 0) && (
+              <DataGrid
+                rows={filteredBooks}
+                columns={columns}
+                autoHeight
+                pageSize={10}
+                rowsPerPageOptions={[10, 20, 50]}
+                disableSelectionOnClick
+              />
+            )}
             <EditBookDialog
               open={editOpen}
               onClose={() => setEditOpen(false)}
@@ -243,6 +285,7 @@ function BooksTable() {
           </div>
         )}
       </Paper>
+
     </Box>
   );
 }

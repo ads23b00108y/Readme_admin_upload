@@ -116,7 +116,13 @@ export default function UsersTable() {
   };
 
   const columns = [
-    { field: 'email', headerName: 'Email', flex: 1, minWidth: 180 },
+    {
+      field: 'email',
+      headerName: 'Email',
+      flex: 1,
+      minWidth: 180,
+      renderCell: (params) => params.value || 'N/A',
+    },
     { field: 'role', headerName: 'Role', flex: 1, minWidth: 100 },
     {
       field: 'actions',
@@ -142,8 +148,8 @@ export default function UsersTable() {
   ];
 
   return (
-    <Box sx={{ mt: 10, p: 2 }}>
-      <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>Manage Users</Typography>
+    <Box sx={{ maxWidth: 900, mx: 'auto', mt: 0.5 }}>
+      <Typography variant="h4" sx={{ mb: 3, fontWeight: 700, color: '#7c3aed' }}>Manage Users</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <Paper sx={{ height: 500, width: '100%', mb: 2 }}>
         <DataGrid

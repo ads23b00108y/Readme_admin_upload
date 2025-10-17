@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Box, Card, Typography, Grid, CircularProgress, Tabs, Tab, Paper, IconButton, Tooltip, Dialog, Avatar, CardContent } from '@mui/material';
+import { Box, Card, Typography, Grid, CircularProgress, Tabs, Tab, Paper, IconButton, Tooltip, Dialog, Avatar } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -52,7 +52,7 @@ export default function AdminDashboard() {
         const totalBooks = books.length;
         const needsTagging = books.filter(b => b.needsTagging).length;
         const missingPdf = books.filter(b => !b.pdfUrl).length;
-        const missingCover = books.filter(b => !b.coverUrl && !b.coverImageUrl).length;
+        const missingCover = books.filter(b => !b.coverUrl && !b.coverImageUrl && !b.displayCover).length;
 
         // Recently uploaded books (sorted by createdAt desc)
         const sortedBooks = books
@@ -236,13 +236,13 @@ export default function AdminDashboard() {
   }, []);
 
   if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}><CircularProgress /></Box>;
+    return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
   }
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 3 } }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: '#7c3aed' }}>Admin Dashboard</Typography>
-      <Paper sx={{ mb: 3, borderRadius: 2, boxShadow: 1 }}>
+    <Box sx={{ px: { xs: 1, sm: 3, md: 6 }, pt: 0.5, pb: 2, width: '100%', boxSizing: 'border-box' }}>
+      <Typography variant="h5" sx={{ mb: 2, fontWeight: 700, color: '#7c3aed' }}>Admin Dashboard</Typography>
+      <Paper sx={{ mb: 2, borderRadius: 2, boxShadow: 1, width: '100%', boxSizing: 'border-box' }}>
         <Tabs
           value={tab}
           onChange={(_, v) => setTab(v)}
@@ -251,10 +251,10 @@ export default function AdminDashboard() {
           variant="scrollable"
           scrollButtons="auto"
         >
-          <Tab label="Overview" />
-          <Tab label="Books Analytics" />
-          <Tab label="User Analytics" />
-          <Tab label="Engagement Analytics" />
+          <Tab label="Overview" sx={{ textTransform: 'none', fontWeight: 600, '&.Mui-selected': { color: '#7c3aed', background: '#ede9fe', borderRadius: 2 } }} />
+          <Tab label="Books analytics" sx={{ textTransform: 'none', fontWeight: 600, '&.Mui-selected': { color: '#7c3aed', background: '#ede9fe', borderRadius: 2 } }} />
+          <Tab label="User analytics" sx={{ textTransform: 'none', fontWeight: 600, '&.Mui-selected': { color: '#7c3aed', background: '#ede9fe', borderRadius: 2 } }} />
+          <Tab label="Engagement analytics" sx={{ textTransform: 'none', fontWeight: 600, '&.Mui-selected': { color: '#7c3aed', background: '#ede9fe', borderRadius: 2 } }} />
         </Tabs>
       </Paper>
       {tab === 3 && (
@@ -373,120 +373,118 @@ export default function AdminDashboard() {
       {tab === 0 && (
         <Box>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>Overview</Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={3} lg={3} xl={3}>
-              <Card sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: '#f3e8ff' }} elevation={3}>
-                <Avatar sx={{ bgcolor: '#7c3aed', mr: 2 }}><MenuBookIcon /></Avatar>
-                <CardContent sx={{ p: 0 }}>
-                  <Typography variant="subtitle2" color="text.secondary">Total Books</Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{totals.books}</Typography>
-                </CardContent>
+          <Grid container spacing={3} sx={{ width: '100%', margin: 0, maxWidth: '100%' }} columns={12}>
+            <Grid item xs={12} sm={6} md={2.4} lg={2.4} xl={2.4}>
+              <Card sx={{ p: 2, bgcolor: '#f3e8ff', minWidth: 110, maxWidth: 150, mx: 'auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 3 }} elevation={3}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600, mb: 1, textAlign: 'center' }}>Total books</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 0.5 }}>
+                  <Avatar sx={{ bgcolor: '#7c3aed', width: 44, height: 44 }}><MenuBookIcon /></Avatar>
+                  <Typography variant="h4" sx={{ fontWeight: 700, textAlign: 'center', ml: 1 }}>{totals.books}</Typography>
+                </Box>
               </Card>
             </Grid>
-            <Grid item xs={12} sm={6} md={3} lg={3} xl={3}>
-              <Card sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: '#e0e7ff' }} elevation={3}>
-                <Avatar sx={{ bgcolor: '#6366f1', mr: 2 }}><GroupIcon /></Avatar>
-                <CardContent sx={{ p: 0 }}>
-                  <Typography variant="subtitle2" color="text.secondary">Total Users</Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{totals.users}</Typography>
-                </CardContent>
+            <Grid item xs={12} sm={6} md={2.4} lg={2.4} xl={2.4}>
+              <Card sx={{ p: 2, bgcolor: '#e0e7ff', minWidth: 110, maxWidth: 150, mx: 'auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 3 }} elevation={3}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600, mb: 1, textAlign: 'center' }}>Total users</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 0.5 }}>
+                  <Avatar sx={{ bgcolor: '#6366f1', width: 44, height: 44 }}><GroupIcon /></Avatar>
+                  <Typography variant="h4" sx={{ fontWeight: 700, textAlign: 'center', ml: 1 }}>{totals.users}</Typography>
+                </Box>
               </Card>
             </Grid>
-            <Grid item xs={12} sm={6} md={3} lg={3} xl={3}>
-              <Card sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: '#fffbe7' }} elevation={3}>
-                <Avatar sx={{ bgcolor: '#fdcb6e', color: '#fff', mr: 2 }}><WarningAmberIcon /></Avatar>
-                <CardContent sx={{ p: 0 }}>
-                  <Typography variant="subtitle2" color="text.secondary">Needs Tagging</Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{totals.needsTagging}</Typography>
-                </CardContent>
+            <Grid item xs={12} sm={6} md={2.4} lg={2.4} xl={2.4}>
+              <Card sx={{ p: 2, bgcolor: '#fffbe7', minWidth: 110, maxWidth: 150, mx: 'auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 3 }} elevation={3}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600, mb: 1, textAlign: 'center' }}>Needs tagging</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 0.5 }}>
+                  <Avatar sx={{ bgcolor: '#fdcb6e', color: '#fff', width: 44, height: 44 }}><WarningAmberIcon /></Avatar>
+                  <Typography variant="h4" sx={{ fontWeight: 700, textAlign: 'center', ml: 1 }}>{totals.needsTagging}</Typography>
+                </Box>
               </Card>
             </Grid>
-            <Grid item xs={12} sm={6} md={3} lg={3} xl={3}>
-              <Card sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: '#ffeaea' }} elevation={3}>
-                <Avatar sx={{ bgcolor: '#e17055', color: '#fff', mr: 2 }}><PictureAsPdfIcon /></Avatar>
-                <CardContent sx={{ p: 0 }}>
-                  <Typography variant="subtitle2" color="text.secondary">Missing PDFs</Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{totals.missingPdf}</Typography>
-                </CardContent>
+            <Grid item xs={12} sm={6} md={2.4} lg={2.4} xl={2.4}>
+              <Card sx={{ p: 2, bgcolor: '#ffeaea', minWidth: 110, maxWidth: 150, mx: 'auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 3 }} elevation={3}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600, mb: 1, textAlign: 'center' }}>Missing PDFs</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 0.5 }}>
+                  <Avatar sx={{ bgcolor: '#e17055', color: '#fff', width: 44, height: 44 }}><PictureAsPdfIcon /></Avatar>
+                  <Typography variant="h4" sx={{ fontWeight: 700, textAlign: 'center', ml: 1 }}>{totals.missingPdf}</Typography>
+                </Box>
               </Card>
             </Grid>
-            <Grid item xs={12} sm={6} md={3} lg={3} xl={3}>
-              <Card sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: '#e0f7fa' }} elevation={3}>
-                <Avatar sx={{ bgcolor: '#00bcd4', color: '#fff', mr: 2 }}><MenuBookIcon /></Avatar>
-                <CardContent sx={{ p: 0 }}>
-                  <Typography variant="subtitle2" color="text.secondary">Missing Cover Images</Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>{totals.missingCover}</Typography>
-                </CardContent>
+            <Grid item xs={12} sm={6} md={2.4} lg={2.4} xl={2.4}>
+              <Card sx={{ p: 2, bgcolor: '#e0f7fa', minWidth: 110, maxWidth: 150, mx: 'auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 3 }} elevation={3}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 600, mb: 1, textAlign: 'center' }}>Missing cover images</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 0.5 }}>
+                  <Avatar sx={{ bgcolor: '#00bcd4', color: '#fff', width: 44, height: 44 }}><MenuBookIcon /></Avatar>
+                  <Typography variant="h4" sx={{ fontWeight: 700, textAlign: 'center', ml: 1 }}>{totals.missingCover}</Typography>
+                </Box>
               </Card>
             </Grid>
-            {/* Recently uploaded books card grid with quick actions */}
+            {/* Recently uploaded books header and grid (no box) */}
             <Grid item xs={12} md={12}>
-              <Card sx={{ p: 3 }} elevation={2}>
-                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Recently Uploaded Books</Typography>
-                <Grid container spacing={2}>
-                  {recentBooks.length === 0 && <Typography color="text.secondary" sx={{ ml: 2 }}>No recent books found.</Typography>}
-                  {recentBooks.map((b) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={b.id}>
-                      <Card sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 2, minHeight: 220, position: 'relative', boxShadow: 2, borderRadius: 3 }}>
-                        {b.coverUrl || b.coverImageUrl ? (
-                          <img src={b.coverUrl || b.coverImageUrl} alt="cover" style={{ width: 60, height: 90, objectFit: 'cover', borderRadius: 6, boxShadow: '0 2px 8px #d1c4e9', marginBottom: 8 }} />
-                        ) : (
-                          <Box sx={{ width: 60, height: 90, bgcolor: '#f3e8ff', borderRadius: 1, mb: 1 }} />
-                        )}
-                        <Typography variant="subtitle1" sx={{ fontWeight: 600, textAlign: 'center', mb: 0.5, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.title || b.id}</Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 0.5 }}>{b.author}</Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>{b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().toLocaleDateString() : new Date(b.createdAt).toLocaleDateString()) : ''}</Typography>
-                        <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                          <Tooltip title="View Details"><IconButton color="primary" onClick={() => { setSelectedBook(b); setViewOpen(true); }}><VisibilityIcon /></IconButton></Tooltip>
-                          <Tooltip title="Edit"><IconButton color="secondary" onClick={() => { setSelectedBook(b); setEditOpen(true); }}><EditIcon /></IconButton></Tooltip>
-                          <Tooltip title="Delete"><IconButton color="error" onClick={() => { setSelectedBook(b); setDeleteConfirm(true); }}><DeleteIcon /></IconButton></Tooltip>
-                        </Box>
-                        {/* Engagement: show if missing PDF or cover */}
-                        {( (!b.pdfUrl) || (!b.coverUrl && !b.coverImageUrl) ) && (
-                          <Typography variant="caption" color="error" sx={{ mt: 1 }}>
-                            {(!b.pdfUrl && (!b.coverUrl && !b.coverImageUrl)) ? 'Missing PDF & Cover' : (!b.pdfUrl ? 'Missing PDF' : 'Missing Cover')}
-                          </Typography>
-                        )}
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-                {/* View Dialog */}
-                <Dialog open={viewOpen} onClose={() => setViewOpen(false)} maxWidth="sm" fullWidth>
-                  {selectedBook && (
-                    <Box sx={{ p: 2 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 700 }}>{selectedBook.title}</Typography>
-                      <Typography variant="subtitle1" color="text.secondary">by {selectedBook.author}</Typography>
-                      <Typography variant="body2" color="text.secondary">Age: {selectedBook.ageRating}</Typography>
-                      <Typography variant="body2" sx={{ mt: 1 }}>{selectedBook.description}</Typography>
-                      <Typography variant="body2" sx={{ mt: 1 }}>PDF: {selectedBook.pdfUrl ? <a href={selectedBook.pdfUrl} target="_blank" rel="noopener noreferrer">View PDF</a> : 'No PDF uploaded'}</Typography>
-                    </Box>
-                  )}
-                </Dialog>
-                {/* Edit Dialog */}
-                <EditBookDialog open={editOpen} onClose={() => setEditOpen(false)} book={selectedBook} />
-                {/* Delete Confirm Dialog */}
-                <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
-                  <Box sx={{ p: 3, minWidth: 300 }}>
-                    <Typography variant="h6" sx={{ mb: 2 }}>Delete Book?</Typography>
-                    <Typography sx={{ mb: 2 }}>Are you sure you want to delete <b>{selectedBook?.title}</b>? This action cannot be undone.</Typography>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                      <PurpleButton onClick={() => setDeleteConfirm(false)} sx={{ minWidth: 80 }}>Cancel</PurpleButton>
-                      <PurpleButton color="error" onClick={async () => {
-                        // Delete logic (reuse from BooksTable.js)
-                        if (!selectedBook) return;
-                        try {
-                          await deleteDoc(doc(db, 'books', selectedBook.id));
-                          setRecentBooks(recentBooks.filter(b => b.id !== selectedBook.id));
-                          setDeleteConfirm(false);
-                        } catch (err) {
-                          alert('Failed to delete book: ' + err.message);
-                        }
-                      }} sx={{ minWidth: 80 }}>Delete</PurpleButton>
-                    </Box>
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>Recently Uploaded Books</Typography>
+              <Grid container spacing={3} sx={{ mt: 2, width: '100%', margin: 0 }} columns={{ xs: 12, sm: 12, md: 12, lg: 12, xl: 12 }}>
+                {recentBooks.length === 0 && <Typography color="text.secondary" sx={{ ml: 2 }}>No recent books found.</Typography>}
+                {recentBooks.map((b) => (
+                  <Grid item xs={12} sm={6} md={2.4} lg={2.4} xl={2.4} key={b.id} sx={{ minWidth: 140 }}>
+                    <Card sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', p: 1.2, minHeight: 210, maxWidth: 150, width: '100%', position: 'relative', boxShadow: '0 2px 8px 0 rgba(60,60,60,0.07)', borderRadius: 3, mx: 'auto' }}>
+                      {b.coverUrl || b.coverImageUrl || b.displayCover ? (
+                        <img src={b.coverUrl || b.coverImageUrl || b.displayCover} alt="cover" style={{ width: 80, height: 90, objectFit: 'cover', borderRadius: 8, boxShadow: '0 2px 8px #d1c4e9', marginBottom: 10 }} />
+                      ) : (
+                        <Box sx={{ width: 80, height: 90, bgcolor: '#f3e8ff', borderRadius: 1.5, mb: 1.2 }} />
+                      )}
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, textAlign: 'center', mb: 0.5, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.title || b.id}</Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mb: 0.5, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.author}</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>{b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().toLocaleDateString() : new Date(b.createdAt).toLocaleDateString()) : ''}</Typography>
+                      <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                        <Tooltip title="View Details"><IconButton color="primary" onClick={() => { setSelectedBook(b); setViewOpen(true); }}><VisibilityIcon /></IconButton></Tooltip>
+                        <Tooltip title="Edit"><IconButton color="secondary" onClick={() => { setSelectedBook(b); setEditOpen(true); }}><EditIcon /></IconButton></Tooltip>
+                        <Tooltip title="Delete"><IconButton color="error" onClick={() => { setSelectedBook(b); setDeleteConfirm(true); }}><DeleteIcon /></IconButton></Tooltip>
+                      </Box>
+                      {/* Engagement: show if missing PDF or cover */}
+                      {( (!b.pdfUrl) || (!b.coverUrl && !b.coverImageUrl && !b.displayCover) ) && (
+                        <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+                          {(!b.pdfUrl && (!b.coverUrl && !b.coverImageUrl && !b.displayCover)) ? 'Missing PDF & Cover' : (!b.pdfUrl ? 'Missing PDF' : 'Missing Cover')}
+                        </Typography>
+                      )}
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+              {/* View Dialog */}
+              <Dialog open={viewOpen} onClose={() => setViewOpen(false)} maxWidth="sm" fullWidth>
+                {selectedBook && (
+                  <Box sx={{ p: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>{selectedBook.title}</Typography>
+                    <Typography variant="subtitle1" color="text.secondary">by {selectedBook.author}</Typography>
+                    <Typography variant="body2" color="text.secondary">Age: {selectedBook.ageRating}</Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>{selectedBook.description}</Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>PDF: {selectedBook.pdfUrl ? <a href={selectedBook.pdfUrl} target="_blank" rel="noopener noreferrer">View PDF</a> : 'No PDF uploaded'}</Typography>
                   </Box>
-                </Dialog>
-              </Card>
+                )}
+              </Dialog>
+              {/* Edit Dialog */}
+              <EditBookDialog open={editOpen} onClose={() => setEditOpen(false)} book={selectedBook} />
+              {/* Delete Confirm Dialog */}
+              <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
+                <Box sx={{ p: 3, minWidth: 300 }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>Delete Book?</Typography>
+                  <Typography sx={{ mb: 2 }}>Are you sure you want to delete <b>{selectedBook?.title}</b>? This action cannot be undone.</Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                    <PurpleButton onClick={() => setDeleteConfirm(false)} sx={{ minWidth: 80 }}>Cancel</PurpleButton>
+                    <PurpleButton color="error" onClick={async () => {
+                      // Delete logic (reuse from BooksTable.js)
+                      if (!selectedBook) return;
+                      try {
+                        await deleteDoc(doc(db, 'books', selectedBook.id));
+                        setRecentBooks(recentBooks.filter(b => b.id !== selectedBook.id));
+                        setDeleteConfirm(false);
+                      } catch (err) {
+                        alert('Failed to delete book: ' + err.message);
+                      }
+                    }} sx={{ minWidth: 80 }}>Delete</PurpleButton>
+                  </Box>
+                </Box>
+              </Dialog>
             </Grid>
           </Grid>
         </Box>
